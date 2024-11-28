@@ -1,0 +1,66 @@
+import pandas as pd
+from ucimlrepo import fetch_ucirepo
+from sklearn.model_selection import train_test_split
+
+# Fetch dataset from UCI repository
+def load_data():
+    heart_disease = fetch_ucirepo(id=45)
+    X = heart_disease.data.features
+    y = heart_disease.data.targets
+    return X, y
+
+def backward_chain_risk_assessment(row, goal):
+   
+    risk = None  # Setting to none first
+
+    if goal == "High":
+        # High Risk if these conditions are met
+        if row['age'] > 65:
+            return "High"
+        elif row['sex'] == 1 and row['cp'] == 1 and row['chol'] > 240:
+            return "High"
+        elif row['thalach'] < (220 - row['age']) * 0.50:
+            return "High"
+        elif row['exang'] == 1:
+            return "High"
+
+    elif goal == "Moderate":
+        # Moderate Risk if these conditions are met
+        if 50 <= row['age'] <= 65 and row['chol'] > 200 and row['cp'] != 4:
+            return "Moderate"
+        elif row['thalach'] < (220 - row['age']) * 0.70:
+            return "Moderate"
+        elif row['exang'] == 1:
+            return "Moderate"
+
+    elif goal == "Low":
+        # Low Risk if these conditions are met
+        if row['chol'] < 200 and row['cp'] == 3:
+            return "Low"
+        elif row['thalach'] > (220 - row['age']) * 0.85:
+            return "Low"
+        else:
+            return "Low"
+
+    # fallback incase none of the conditions are met and causes an error
+    return "Low"
+
+
+# Main function to assess risk
+def main():
+    # Load dataset
+    X, y = load_data()
+
+    # Split dataset into training and testing subsets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Apply the risk assessment to the training set
+    X_train['Risk'] = X_train.apply(lambda row: backward_chain_risk_assessment(row, "High"), axis=1)
+
+    # Display some results from the test set
+    print("Test Dataset with Risk Assessment (Backward Chaining):")
+    print(X_train[['age','sex', 'chol', 'thalach', 'cp', 'exang', 'Risk']].head())
+
+# Run the system
+if __name__ == "__main__":
+    main()
